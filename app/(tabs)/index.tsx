@@ -33,7 +33,7 @@ export default function TimetableScreen() {
   const handleHorizontalScroll = (event: any) => {
     const scrollX = event.nativeEvent.contentOffset.x;
     // Sync the other ScrollView
-    if (event.target._nativeTag === classesScrollRef.current?._nativeTag) {
+    if (event.target === classesScrollRef.current) {
       daysHeaderScrollRef.current?.scrollTo({ x: scrollX, animated: false });
     } else {
       classesScrollRef.current?.scrollTo({ x: scrollX, animated: false });
@@ -168,6 +168,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
+  headerText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   addButton: {
     backgroundColor: '#6366f1',
     width: 40,
@@ -256,6 +260,10 @@ const styles = StyleSheet.create({
   eventText: {
     color: 'white',
     fontSize: 10,
+    fontWeight: '500',
+  },
+  timeText: {
+    fontSize: 12,
     fontWeight: '500',
   },
 });
