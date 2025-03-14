@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus } from 'lucide-react-native';
@@ -27,6 +27,18 @@ const COLORS = {
 export default function TimetableScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const events = useTimetableStore((state) => state.events);
+  const daysHeaderScrollRef = useRef<ScrollView>(null);
+  const classesScrollRef = useRef<ScrollView>(null);
+
+  const handleHorizontalScroll = (event: any) => {
+    const scrollX = event.nativeEvent.contentOffset.x;
+    // Sync the other ScrollView
+    if (event.target._nativeTag === classesScrollRef.current?._nativeTag) {
+      daysHeaderScrollRef.current?.scrollTo({ x: scrollX, animated: false });
+    } else {
+      classesScrollRef.current?.scrollTo({ x: scrollX, animated: false });
+    }
+  };
 
   const getEventsByDayAndClass = (day: string, classNumber: number) => {
     return events.filter(
@@ -46,62 +58,88 @@ export default function TimetableScreen() {
       </View>
 
       <View style={styles.timetableWrapper}>
-        {/* Fixed Time Column */}
-        <View style={styles.timeColumn}>
-          <View style={[styles.cell, styles.headerCell]}>
+        {/* Header Row - Fixed on top */}
+        <View style={styles.headerRow}>
+          {/* Empty cell for top-left corner */}
+          <View style={[styles.cell, styles.headerCell, styles.cornerCell]}>
             <Text style={styles.headerText}>Time</Text>
           </View>
-          {CLASS_TIMES.map((time, index) => (
-            <View key={index} style={[styles.cell, styles.timeCell]}>
-              <Text style={styles.timeText}>{time.start}</Text>
-              <Text style={styles.timeText}>{time.end}</Text>
-            </View>
-          ))}
-        </View>
 
-        {/* Scrollable Content */}
-        <ScrollView style={styles.verticalScrollView}>
-          <ScrollView 
-            horizontal 
+          {/* Day Headers - Scrollable horizontally */}
+          <ScrollView
+            ref={daysHeaderScrollRef}
+            horizontal
             showsHorizontalScrollIndicator={false}
-            style={styles.horizontalScrollView}
-            contentContainerStyle={styles.scrollContent}>
+            style={styles.daysHeaderScrollView}
+            contentContainerStyle={styles.daysHeaderContent}
+            onScroll={handleHorizontalScroll}
+            scrollEventThrottle={16}>
             {DAYS.map((day) => (
-              <View key={day} style={styles.dayColumn}>
-                <View style={[styles.cell, styles.headerCell]}>
-                  <Text style={styles.headerText}>
-                    {day.charAt(0).toUpperCase() + day.slice(1, 3)}
-                  </Text>
-                </View>
-                {TIMETABLE[day as keyof typeof TIMETABLE].map((subject, index) => {
-                  const dayEvents = getEventsByDayAndClass(day, index + 1);
-                  return (
-                    <View
-                      key={index}
-                      style={[
-                        styles.cell,
-                        { backgroundColor: COLORS[subject as keyof typeof COLORS] || '#f3f4f6' },
-                      ]}>
-                      <Text style={styles.subjectText}>{subject}</Text>
-                      {dayEvents.map((event) => (
-                        <View
-                          key={event.id}
-                          style={[
-                            styles.eventBadge,
-                            {
-                              backgroundColor:
-                                event.type === 'homework' ? '#6366f1' : '#ef4444',
-                            },
-                          ]}>
-                          <Text style={styles.eventText}>{event.name}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  );
-                })}
+              <View key={day} style={[styles.cell, styles.headerCell, styles.dayHeaderCell]}>
+                <Text style={styles.headerText}>
+                  {day.charAt(0).toUpperCase() + day.slice(1, 3)}
+                </Text>
               </View>
             ))}
           </ScrollView>
+        </View>
+
+        {/* Main Content Area - Scrollable both directions */}
+        <ScrollView
+          style={styles.mainScrollView}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.contentContainer}>
+            {/* Time Column - Fixed on left */}
+            <View style={styles.timeColumn}>
+              {CLASS_TIMES.map((time, index) => (
+                <View key={index} style={[styles.cell, styles.timeCell]}>
+                  <Text style={styles.timeText}>{time.start}</Text>
+                  <Text style={styles.timeText}>{time.end}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Class Columns - Scrollable horizontally */}
+            <ScrollView
+              ref={classesScrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.classesScrollView}
+              onScroll={handleHorizontalScroll}
+              scrollEventThrottle={16}>
+              {DAYS.map((day) => (
+                <View key={day} style={styles.dayColumn}>
+                  {TIMETABLE[day as keyof typeof TIMETABLE].map((subject, index) => {
+                    const dayEvents = getEventsByDayAndClass(day, index + 1);
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.cell,
+                          styles.classCell,
+                          { backgroundColor: COLORS[subject as keyof typeof COLORS] || '#f3f4f6' },
+                        ]}>
+                        <Text style={styles.subjectText}>{subject}</Text>
+                        {dayEvents.map((event) => (
+                          <View
+                            key={event.id}
+                            style={[
+                              styles.eventBadge,
+                              {
+                                backgroundColor:
+                                  event.type === 'homework' ? '#6366f1' : '#ef4444',
+                              },
+                            ]}>
+                            <Text style={styles.eventText}>{event.name}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
+            </ScrollView>
+          </View>
         </ScrollView>
       </View>
 
@@ -140,6 +178,30 @@ const styles = StyleSheet.create({
   },
   timetableWrapper: {
     flex: 1,
+    flexDirection: 'column',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    zIndex: 2,
+  },
+  cornerCell: {
+    width: 80,
+    height: 40,
+  },
+  daysHeaderScrollView: {
+    flex: 1,
+  },
+  daysHeaderContent: {
+    flexDirection: 'row',
+  },
+  dayHeaderCell: {
+    width: 140,
+    height: 40,
+  },
+  mainScrollView: {
+    flex: 1,
+  },
+  contentContainer: {
     flexDirection: 'row',
   },
   timeColumn: {
@@ -155,20 +217,13 @@ const styles = StyleSheet.create({
     elevation: 3,
     zIndex: 1,
   },
-  verticalScrollView: {
+  classesScrollView: {
     flex: 1,
-  },
-  horizontalScrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexDirection: 'row',
   },
   dayColumn: {
     width: 140,
   },
   cell: {
-    height: 100,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     padding: 4,
@@ -179,18 +234,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerText: {
-    fontWeight: '600',
-    fontSize: 14,
-  },
   timeCell: {
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
   },
-  timeText: {
-    fontSize: 12,
-    color: '#6b7280',
+  classCell: {
+    height: 100,
   },
   subjectText: {
     fontSize: 12,
