@@ -1,8 +1,9 @@
 import { create } from 'zustand';
+import { addDays, startOfWeek, format, isToday, isSameDay } from 'date-fns';
 
 export interface Event {
   id: string;
-  day: string;
+  date: Date;
   classNumber: number;
   name: string;
   type: 'homework' | 'quiz';
@@ -10,8 +11,12 @@ export interface Event {
 
 interface TimetableState {
   events: Event[];
+  currentWeekStart: Date;
   addEvent: (event: Omit<Event, 'id'>) => void;
   removeEvent: (id: string) => void;
+  goToNextWeek: () => void;
+  goToPreviousWeek: () => void;
+  resetToCurrentWeek: () => void;
 }
 
 export const TIMETABLE = {
@@ -33,14 +38,46 @@ export const CLASS_TIMES = [
   { start: '16:10', end: '17:00' }
 ];
 
-export const useTimetableStore = create<TimetableState>((set) => ({
+// Helper function to get day of week from date
+export const getDayOfWeek = (date: Date): string => {
+  const day = format(date, 'EEEE').toLowerCase();
+  return day === 'saturday' || day === 'sunday' ? 'monday' : day;
+};
+
+// Initialize with current week
+const initialWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Start on Monday
+
+export const useTimetableStore = create<TimetableState>((set, get) => ({
   events: [],
+  currentWeekStart: initialWeekStart,
+
   addEvent: (event) =>
     set((state) => ({
       events: [...state.events, { ...event, id: Math.random().toString() }],
     })),
+
   removeEvent: (id) =>
     set((state) => ({
       events: state.events.filter((event) => event.id !== id),
     })),
+
+  goToNextWeek: () =>
+    set((state) => ({
+      currentWeekStart: addDays(state.currentWeekStart, 7),
+    })),
+
+  goToPreviousWeek: () =>
+    set((state) => ({
+      currentWeekStart: addDays(state.currentWeekStart, -7),
+    })),
+
+  resetToCurrentWeek: () =>
+    set(() => ({
+      currentWeekStart: initialWeekStart,
+    })),
 }));
+
+// Helper to get the date for a specific day in the current week
+export const getDateForDay = (weekStart: Date, dayIndex: number) => {
+  return addDays(weekStart, dayIndex);
+};
