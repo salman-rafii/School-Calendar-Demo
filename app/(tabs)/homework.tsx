@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, Edit2 } from 'lucide-react-native';
 import { format, isToday } from 'date-fns';
 import { useTimetableStore, TIMETABLE, CLASS_TIMES, getDayOfWeek } from '../../store/timetableStore';
 
 export default function HomeworkScreen() {
-  const { events, removeEvent } = useTimetableStore();
+  const { events, removeEvent, updateEvent } = useTimetableStore();
+  const [editingEventId, setEditingEventId] = React.useState<string | null>(null);
+  const [editedName, setEditedName] = React.useState<string>('');
 
   // Sort events by date and class number
   const sortedEvents = [...events].sort((a, b) => {
@@ -44,11 +46,32 @@ export default function HomeworkScreen() {
                     {CLASS_TIMES[event.classNumber - 1].end}
                   </Text>
                 </View>
-                <TouchableOpacity
-                  onPress={() => removeEvent(event.id)}
-                  style={styles.deleteButton}>
-                  <Trash2 size={20} color="#ef4444" />
-                </TouchableOpacity>
+                {editingEventId !== event.id ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingEventId(event.id);
+                        setEditedName(event.name);
+                      }}
+                      style={[styles.editButton, { marginRight: 8 }]}
+                    >
+                      <Edit2 size={20} color="#6366f1" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => removeEvent(event.id)}
+                      style={styles.deleteButton}
+                    >
+                      <Trash2 size={20} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => removeEvent(event.id)}
+                    style={styles.deleteButton}
+                  >
+                    <Trash2 size={20} color="#ef4444" />
+                  </TouchableOpacity>
+                )}
               </View>
               <Text style={styles.subjectText}>
                 {TIMETABLE[dayName as keyof typeof TIMETABLE][event.classNumber - 1]}
@@ -65,7 +88,41 @@ export default function HomeworkScreen() {
                   {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
                 </Text>
               </View>
-              <Text style={styles.eventNameText}>{event.name}</Text>
+              {
+                editingEventId === event.id ? (
+                  <>
+                    <TextInput
+                      style={[styles.eventNameText, { borderColor: '#ccc', borderWidth: 1, padding: 4 }]}
+                      value={editedName}
+                      onChangeText={setEditedName}
+                    />
+                    <View style={{ flexDirection: 'row', marginTop: 4 }}>
+                      <TouchableOpacity
+                        onPress={() => setEditingEventId(null)}
+                        style={[styles.cancelButton, { marginRight: 8 }]}
+                      >
+                        <Text style={styles.buttonText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          updateEvent(event.id, { name: editedName });
+                          setEditingEventId(null);
+                        }}
+                        style={styles.saveButton}
+                      >
+                        <Text style={styles.buttonText}>Save</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                ) : (
+                  <TouchableOpacity onLongPress={() => {
+                    setEditingEventId(event.id);
+                    setEditedName(event.name);
+                  }}>
+                    <Text style={styles.eventNameText}>{event.name}</Text>
+                  </TouchableOpacity>
+                )
+              }
             </View>
           );
         })}
@@ -137,6 +194,9 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: 8,
   },
+  editButton: {
+    padding: 8,
+  },
   subjectText: {
     fontSize: 16,
     color: '#4b5563',
@@ -173,5 +233,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9ca3af',
     marginTop: 4,
+  },
+  cancelButton: {
+    backgroundColor: '#ef4444',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+  },
+  saveButton: {
+    backgroundColor: '#6366f1',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 4,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: '500',
   },
 });

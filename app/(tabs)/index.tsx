@@ -8,28 +8,12 @@ import {
   CLASS_TIMES,
   useTimetableStore,
   getDayOfWeek,
-  getDateForDay
+  getDateForDay,
+  COLORS
 } from '../../store/timetableStore';
 import { AddEventModal } from '../../components/AddEventModal';
 
 const DAYS_INDEX = [0, 1, 2, 3, 4]; // Monday to Friday indices
-const COLORS = {
-  Chinese: '#fecaca',
-  Math: '#bfdbfe',
-  English: '#bbf7d0',
-  Chemistry: '#ddd6fe',
-  Biology: '#fde68a',
-  'Scientific reading': '#fed7aa',
-  'Science and Creative Thinking': '#c7d2fe',
-  'Living Technology': '#a5b4fc',
-  'Alternative Learning': '#fecaca',
-  History: '#bfdbfe',
-  Taiwanese: '#bbf7d0',
-  Society: '#ddd6fe',
-  PE: '#fde68a',
-  Club: '#fed7aa',
-  'Elective Subjects': '#c7d2fe',
-};
 
 export default function TimetableScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);

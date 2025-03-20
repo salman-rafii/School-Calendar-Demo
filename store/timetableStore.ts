@@ -17,6 +17,7 @@ interface TimetableState {
   goToNextWeek: () => void;
   goToPreviousWeek: () => void;
   resetToCurrentWeek: () => void;
+  updateEvent: (id: string, updates: Partial<Omit<Event, 'id'>>) => void;
 }
 
 export const TIMETABLE = {
@@ -25,6 +26,24 @@ export const TIMETABLE = {
   wednesday: ['Math', 'Math', 'Living Technology', 'Living Technology', 'English', 'Society', 'Chinese'],
   thursday: ['Chemistry', 'Biology', 'Alternative Learning', 'Alternative Learning', 'History', 'Taiwanese', 'Chinese'],
   friday: ['PE', 'PE', 'Math', 'Math', 'Chinese', 'Elective Subjects', 'Elective Subjects']
+};
+
+export const COLORS = {
+  Chinese: '#fecaca',
+  Math: '#bfdbfe',
+  English: '#bbf7d0',
+  Chemistry: '#ddd6fe',
+  Biology: '#fde68a',
+  'Scientific reading': '#fed7aa',
+  'Science and Creative Thinking': '#c7d2fe',
+  'Living Technology': '#a5b4fc',
+  'Alternative Learning': '#fecaca',
+  History: '#bfdbfe',
+  Taiwanese: '#bbf7d0',
+  Society: '#ddd6fe',
+  PE: '#fde68a',
+  Club: '#fed7aa',
+  'Elective Subjects': '#c7d2fe',
 };
 
 export const CLASS_TIMES = [
@@ -59,6 +78,13 @@ export const useTimetableStore = create<TimetableState>((set, get) => ({
   removeEvent: (id) =>
     set((state) => ({
       events: state.events.filter((event) => event.id !== id),
+    })),
+
+  updateEvent: (id: string, updates: Partial<Omit<Event, 'id'>>) =>
+    set((state) => ({
+      events: state.events.map((event) =>
+        event.id === id ? { ...event, ...updates } : event
+      ),
     })),
 
   goToNextWeek: () =>
