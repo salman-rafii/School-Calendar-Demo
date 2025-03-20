@@ -20,7 +20,7 @@ export default function HomeworkScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Homework & Quizzes</Text>
+      <Text style={styles.title}>Homework</Text>
       <ScrollView style={styles.scrollView}>
         {sortedEvents.map((event) => {
           const dayName = getDayOfWeek(event.date);
@@ -71,7 +71,7 @@ export default function HomeworkScreen() {
         })}
         {events.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No homework or quizzes yet</Text>
+            <Text style={styles.emptyStateText}>No homework yet</Text>
             <Text style={styles.emptyStateSubtext}>
               Add new events from the calendar tab
             </Text>

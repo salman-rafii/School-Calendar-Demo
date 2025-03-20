@@ -44,15 +44,26 @@ export default function TimetableScreen() {
 
   const daysHeaderScrollRef = useRef<ScrollView>(null);
   const classesScrollRef = useRef<ScrollView>(null);
+  const isScrolling = useRef(false);
 
-  const handleHorizontalScroll = (event: any) => {
+  const handleDaysHeaderScroll = (event: any) => {
+    if (isScrolling.current) return;
+    isScrolling.current = true;
     const scrollX = event.nativeEvent.contentOffset.x;
-    // Sync the other ScrollView
-    if (event.target === classesScrollRef.current) {
-      daysHeaderScrollRef.current?.scrollTo({ x: scrollX, animated: false });
-    } else {
-      classesScrollRef.current?.scrollTo({ x: scrollX, animated: false });
-    }
+    classesScrollRef.current?.scrollTo({ x: scrollX, animated: false });
+    setTimeout(() => {
+      isScrolling.current = false;
+    }, 50);
+  };
+
+  const handleClassesScroll = (event: any) => {
+    if (isScrolling.current) return;
+    isScrolling.current = true;
+    const scrollX = event.nativeEvent.contentOffset.x;
+    daysHeaderScrollRef.current?.scrollTo({ x: scrollX, animated: false });
+    setTimeout(() => {
+      isScrolling.current = false;
+    }, 50);
   };
 
   const getEventsByDateAndClass = (date: Date, classNumber: number) => {
@@ -66,7 +77,6 @@ export default function TimetableScreen() {
     setIsModalVisible(true);
   };
 
-  // Format date for display
   const formatDayHeader = (date: Date) => {
     const isCurrentDay = isToday(date);
     return (
@@ -84,127 +94,133 @@ export default function TimetableScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>School Calendar</Text>
-        <View style={styles.navigationControls}>
-          <TouchableOpacity onPress={resetToCurrentWeek} style={styles.todayButton}>
-            <CalendarDays size={20} color="#6366f1" />
-            <Text style={styles.todayButtonText}>Today</Text>
-          </TouchableOpacity>
-          <View style={styles.weekNavigation}>
-            <TouchableOpacity onPress={goToPreviousWeek} style={styles.navButton}>
-              <ChevronLeft size={24} color="#4b5563" />
+      <View style={styles.contentWrapper}>
+        <View style={styles.header}>
+          <Text style={styles.title}>School Calendar</Text>
+          <View style={styles.navigationControls}>
+            <TouchableOpacity onPress={resetToCurrentWeek} style={styles.todayButton}>
+              <CalendarDays size={20} color="#6366f1" />
+              <Text style={styles.todayButtonText}>Today</Text>
             </TouchableOpacity>
-            <Text style={styles.weekText}>
-              {format(currentWeekStart, 'MMM d')} - {format(getDateForDay(currentWeekStart, 4), 'MMM d')}
-            </Text>
-            <TouchableOpacity onPress={goToNextWeek} style={styles.navButton}>
-              <ChevronRight size={24} color="#4b5563" />
-            </TouchableOpacity>
+            <View style={styles.weekNavigation}>
+              <TouchableOpacity onPress={goToPreviousWeek} style={styles.navButton}>
+                <ChevronLeft size={24} color="#4b5563" />
+              </TouchableOpacity>
+              <Text style={styles.weekText}>
+                {format(currentWeekStart, 'MMM d')} - {format(getDateForDay(currentWeekStart, 4), 'MMM d')}
+              </Text>
+              <TouchableOpacity onPress={goToNextWeek} style={styles.navButton}>
+                <ChevronRight size={24} color="#4b5563" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.timetableWrapper}>
-        {/* Header Row - Fixed on top */}
-        <View style={styles.headerRow}>
-          {/* Empty cell for top-left corner */}
-          <View style={[styles.cell, styles.headerCell, styles.cornerCell]}>
-            <Text style={styles.headerText}>Time</Text>
-          </View>
-
-          {/* Day Headers - Scrollable horizontally */}
-          <ScrollView
-            ref={daysHeaderScrollRef}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.daysHeaderScrollView}
-            contentContainerStyle={styles.daysHeaderContent}
-            onScroll={handleHorizontalScroll}
-            scrollEventThrottle={16}>
-            {DAYS_INDEX.map((dayIndex) => {
-              const date = getDateForDay(currentWeekStart, dayIndex);
-              return (
-                <View
-                  key={dayIndex}
-                  style={[
-                    styles.cell,
-                    styles.headerCell,
-                    styles.dayHeaderCell,
-                    isToday(date) && styles.currentDayHeaderCell
-                  ]}>
-                  {formatDayHeader(date)}
-                </View>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Main Content Area - Scrollable both directions */}
-        <ScrollView
-          style={styles.mainScrollView}
-          showsVerticalScrollIndicator={false}>
-          <View style={styles.contentContainer}>
-            {/* Time Column - Fixed on left */}
-            <View style={styles.timeColumn}>
-              {CLASS_TIMES.map((time, index) => (
-                <View key={index} style={[styles.cell, styles.timeCell]}>
-                  <Text style={styles.timeText}>{time.start}</Text>
-                  <Text style={styles.timeText}>{time.end}</Text>
-                </View>
-              ))}
+        <View style={styles.timetableWrapper}>
+          <View style={styles.headerRow}>
+            <View style={[styles.cell, styles.headerCell, styles.cornerCell]}>
+              <Text style={styles.headerText}>Time</Text>
             </View>
 
-            {/* Class Columns - Scrollable horizontally */}
             <ScrollView
-              ref={classesScrollRef}
+              ref={daysHeaderScrollRef}
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.classesScrollView}
-              onScroll={handleHorizontalScroll}
-              scrollEventThrottle={16}>
+              style={styles.daysHeaderScrollView}
+              contentContainerStyle={styles.daysHeaderContent}
+              onScroll={handleDaysHeaderScroll}
+              scrollEventThrottle={1}
+              directionalLockEnabled
+              snapToInterval={140}
+              pagingEnabled={false}
+              disableIntervalMomentum={true}
+              decelerationRate="fast">
               {DAYS_INDEX.map((dayIndex) => {
                 const date = getDateForDay(currentWeekStart, dayIndex);
-                const dayName = getDayOfWeek(date);
                 return (
-                  <View key={dayIndex} style={styles.dayColumn}>
-                    {TIMETABLE[dayName as keyof typeof TIMETABLE].map((subject, index) => {
-                      const dayEvents = getEventsByDateAndClass(date, index + 1);
-                      return (
-                        <TouchableOpacity
-                          key={index}
-                          style={[
-                            styles.cell,
-                            styles.classCell,
-                            isToday(date) && styles.currentDayCell,
-                            { backgroundColor: COLORS[subject as keyof typeof COLORS] || '#f3f4f6' },
-                          ]}
-                          onPress={() => handleClassPress(date, index + 1, subject)}>
-                          <Text style={styles.subjectText}>{subject}</Text>
-                          <View style={styles.eventsContainer}>
-                            {dayEvents.map((event) => (
-                              <View
-                                key={event.id}
-                                style={[
-                                  styles.eventBadge,
-                                  {
-                                    backgroundColor:
-                                      event.type === 'homework' ? '#6366f1' : '#ef4444',
-                                  },
-                                ]}>
-                                <Text style={styles.eventText}>{event.name}</Text>
-                              </View>
-                            ))}
-                          </View>
-                        </TouchableOpacity>
-                      );
-                    })}
+                  <View
+                    key={dayIndex}
+                    style={[
+                      styles.cell,
+                      styles.headerCell,
+                      styles.dayHeaderCell,
+                      isToday(date) && styles.currentDayHeaderCell
+                    ]}>
+                    {formatDayHeader(date)}
                   </View>
                 );
               })}
             </ScrollView>
           </View>
-        </ScrollView>
+
+          <ScrollView
+            style={styles.mainScrollView}
+            showsVerticalScrollIndicator={false}>
+            <View style={styles.contentContainer}>
+              <View style={styles.timeColumn}>
+                {CLASS_TIMES.map((time, index) => (
+                  <View key={index} style={[styles.cell, styles.timeCell]}>
+                    <Text style={styles.timeText}>{time.start}</Text>
+                    <Text style={styles.timeText}>{time.end}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <ScrollView
+                ref={classesScrollRef}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.classesScrollView}
+                onScroll={handleClassesScroll}
+                scrollEventThrottle={2}
+                directionalLockEnabled
+                snapToInterval={140}
+                pagingEnabled={false}
+                disableIntervalMomentum={true}
+                decelerationRate="fast">
+                {DAYS_INDEX.map((dayIndex) => {
+                  const date = getDateForDay(currentWeekStart, dayIndex);
+                  const dayName = getDayOfWeek(date);
+                  return (
+                    <View key={dayIndex} style={styles.dayColumn}>
+                      {TIMETABLE[dayName as keyof typeof TIMETABLE].map((subject, index) => {
+                        const dayEvents = getEventsByDateAndClass(date, index + 1);
+                        return (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.cell,
+                              styles.classCell,
+                              isToday(date) && styles.currentDayCell,
+                              { backgroundColor: COLORS[subject as keyof typeof COLORS] || '#f3f4f6' },
+                            ]}
+                            onPress={() => handleClassPress(date, index + 1, subject)}>
+                            <Text style={styles.subjectText}>{subject}</Text>
+                            <View style={styles.eventsContainer}>
+                              {dayEvents.map((event) => (
+                                <View
+                                  key={event.id}
+                                  style={[
+                                    styles.eventBadge,
+                                    {
+                                      backgroundColor:
+                                        event.type === 'homework' ? '#6366f1' : '#ef4444',
+                                    },
+                                  ]}>
+                                  <Text style={styles.eventText}>{event.name}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </ScrollView>
+        </View>
       </View>
 
       {selectedClass && (
@@ -225,6 +241,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+  },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 960,
+    alignSelf: 'center',
   },
   header: {
     padding: 16,
@@ -296,14 +318,18 @@ const styles = StyleSheet.create({
   timetableWrapper: {
     flex: 1,
     flexDirection: 'column',
+    width: '100%',
+    alignItems: 'center',
   },
   headerRow: {
     flexDirection: 'row',
     zIndex: 2,
+    width: '100%',
+    maxWidth: 780,
   },
   cornerCell: {
     width: 80,
-    height: 60, // Increased height for date display
+    height: 60,
   },
   daysHeaderScrollView: {
     flex: 1,
@@ -313,7 +339,7 @@ const styles = StyleSheet.create({
   },
   dayHeaderCell: {
     width: 140,
-    height: 60, // Increased height for date display
+    height: 60,
   },
   currentDayHeaderCell: {
     borderBottomColor: '#6366f1',
@@ -327,6 +353,8 @@ const styles = StyleSheet.create({
   },
   mainScrollView: {
     flex: 1,
+    width: '100%',
+    maxWidth: 780,
   },
   contentContainer: {
     flexDirection: 'row',
@@ -356,7 +384,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerCell: {
-    height: 60, // Increased height for date display
+    height: 60,
     backgroundColor: '#f3f4f6',
     justifyContent: 'center',
     alignItems: 'center',
