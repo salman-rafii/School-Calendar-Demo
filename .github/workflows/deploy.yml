@@ -33,15 +33,9 @@ jobs:
     - name: Build for web
       run: |
         npm run build:web
-        # Fix paths for GitHub Pages subdirectory deployment
-        sed -i 's|href="/|href="/School-Calendar-Demo/|g' dist/index.html
-        sed -i 's|src="/|src="/School-Calendar-Demo/|g' dist/index.html
         # Create 404.html for GitHub Pages SPA routing
         cp dist/index.html dist/404.html
-        # Add base tag for proper routing
-        sed -i 's|<head>|<head>\n  <base href="/School-Calendar-Demo/">|' dist/index.html
-        sed -i 's|<head>|<head>\n  <base href="/School-Calendar-Demo/">|' dist/404.html
-        echo "Created 404.html and added base tag for SPA routing"
+        echo "Created 404.html for SPA routing"
         cat dist/index.html
 
     - name: Setup Pages
