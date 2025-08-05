@@ -6,7 +6,7 @@ import { webTouchPolyfill } from '@/hooks/webTouchPolyfill';
 
 export default function RootLayout() {
   useFrameworkReady();
-  
+
   useEffect(() => {
     // Initialize web touch polyfill for better touch handling
     webTouchPolyfill();

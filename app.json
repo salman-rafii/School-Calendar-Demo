@@ -15,8 +15,7 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "name": "School Calendar Demo",
-      "baseUrl": "/School-Calendar-Demo/"
+      "name": "School Calendar Demo"
     },
     "plugins": [
       "expo-router",
